@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>XAML 翻译工具</title>
+    <title>XAML 翻译编辑器</title>
     <style>
         body {
             font-family: Arial;
@@ -58,6 +58,12 @@
         .noTranslation {
             color: red;
         }
+        .file-path {
+            color: #666;
+            font-size: 0.9em;
+            margin: 5px 0;
+            word-break: break-all;
+        }
     </style>
     <script src="./src/renderer.js"></script>
 </head>
@@ -67,9 +73,11 @@
         <div class="column">
             <h3>模板文件</h3>
             <input type="file" id="templateFile" accept=".xaml" onchange="">
+            <div id="templatePath" class="file-path"></div>
 
             <h3>待翻译文件</h3>
             <input type="file" id="translationFile" accept=".xaml" disabled>
+            <div id="translationPath" class="file-path"></div>
 
             <h3>导出</h3>
             <button id="exportBtn" disabled>导出 XAML</button>

@@ -4,12 +4,24 @@
   "main": "main.js",
   "author": "CO",
   "scripts": {
-    "start": "electron .",
-    "pack:win": "electron-packager . --platform=win32 --arch=x64 --out=dist",
-    "pack:mac": "electron-packager . --platform=darwin --arch=x64 --out=dist"
+    "start": "chcp 65001 && electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
   },
   "devDependencies": {
     "electron": "^28.0.0",
+    "electron-builder": "^24.13.3",
     "electron-packager": "^17.0.0"
+  },
+  "build": {
+    "appId": "cn.bptpw.xamltranslatoreditor",
+    "productName": "XAML 翻译编辑器",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!node_modules"
+    ]
   }
 }

@@ -1,10 +1,43 @@
 let baseStrings = new Map()
 let translationStrings = new Map()
 
-document.addEventListener('DOMContentLoaded', () => {
-    // 文件输入处理
+document.addEventListener('DOMContentLoaded', async () => {
+    // 获取历史记录
+    const config = await window.electronAPI.getConfig()
+
+    // 自动加载模板文件
+    if (config.lastTemplate) {
+        try {
+            const content = await window.electronAPI.readFile(config.lastTemplate)
+            baseStrings = parseXAML(content)
+            document.getElementById("translationFile").disabled = false
+            document.querySelector('#templateFile').dataset.path = config.lastTemplate
+            document.getElementById('templatePath').textContent = `已加载: ${config.lastTemplate}`
+        } catch {
+            console.log('上次的模板文件已不存在')
+        }
+    }
+
+    // 自动加载翻译文件
+    if (config.lastTranslation) {
+        try {
+            const content = await window.electronAPI.readFile(config.lastTranslation)
+            translationStrings = parseXAML(content)
+            generateTable()
+            document.getElementById("exportBtn").disabled = false
+            document.querySelector('#translationFile').dataset.path = config.lastTranslation
+            document.getElementById('translationPath').textContent = `已加载: ${config.lastTranslation}`
+        } catch {
+            console.log('上次的翻译文件已不存在')
+        }
+    }
+
+    // 文件选择处理（新增保存路径）
     document.getElementById('templateFile').addEventListener('change', async (e) => {
         const file = e.target.files[0]
+        const config = await window.electronAPI.getConfig()
+        config.lastTemplate = file.path
+        await window.electronAPI.saveConfig(config)
         const content = await window.electronAPI.readFile(file.path)
         const result = parseXAML(content)
         baseStrings = result
@@ -13,6 +46,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('translationFile').addEventListener('change', async (e) => {
         const file = e.target.files[0]
+        const config = await window.electronAPI.getConfig()
+        config.lastTranslation = file.path
+        await window.electronAPI.saveConfig(config)
         const content = await window.electronAPI.readFile(file.path)
         const result = parseXAML(content)
         translationStrings = result
