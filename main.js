@@ -15,6 +15,7 @@ function createWindow() {
     })
 
     //mainWindow.webContents.openDevTools()
+    //require(path.join(__dirname, './menu.js'))
     mainWindow.loadFile('index.html')
     mainWindow.setMenu(null)
 
@@ -37,20 +38,24 @@ app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.exit()
 })
 
+let savedPath = ""
+
 // 文件操作 IPC 处理
 ipcMain.handle('read-file', async (_, path) => {
     return fs.promises.readFile(path, 'utf-8')
 })
 
 ipcMain.handle('save-file', async (_, content) => {
+    /*
     const { filePath } = await dialog.showSaveDialog({
         title: '保存翻译文件',
         defaultPath: 'Language.translated.xaml',
         filters: [{ name: 'XAML Files', extensions: ['xaml'] }]
-    })
-    if (filePath) {
-        await fs.promises.writeFile(filePath, content)
-        return filePath
+    })*/
+    console.log(savedPath);
+    if(savedPath){
+        await fs.promises.writeFile(savedPath, content)
+        return savedPath
     }
 })
 // 添加保存配置的IPC处理
@@ -61,6 +66,12 @@ ipcMain.on('save-config', (_, config) => {
 // 添加获取配置的IPC处理
 ipcMain.handle('get-config', () => {
     return loadConfig()
+})
+
+//设置默认保存位置
+ipcMain.handle("set-translation-path",(_,path) =>{
+    console.log(path);
+    savedPath = path
 })
 
 const configPath = './config.json'

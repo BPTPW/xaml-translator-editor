@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (config.lastTranslation) {
         try {
             const content = await window.electronAPI.readFile(config.lastTranslation)
+            await window.electronAPI.setTranslationPath(config.lastTranslation)
             translationStrings = parseXAML(content)
             generateTable()
             document.getElementById("exportBtn").disabled = false
@@ -50,10 +51,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         config.lastTranslation = file.path
         await window.electronAPI.saveConfig(config)
         const content = await window.electronAPI.readFile(file.path)
+        await window.electronAPI.setTranslationPath(file.path)
         const result = parseXAML(content)
         translationStrings = result
         generateTable()
         document.getElementById("exportBtn").disabled = false
+    })
+
+    window.electronAPI.onSaveFileClick(()=>{
+        document.getElementById('exportBtn').click()
     })
 
     // 导出按钮处理
@@ -78,7 +84,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const savedPath = await window.electronAPI.saveFile(xaml)
         if (savedPath) {
-            alert(`文件已保存至：${savedPath}`)
+            showMessageDialog(`文件已保存至：${savedPath}`)
         }
     })
 })
