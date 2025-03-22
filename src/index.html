@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>XAML 翻译工具</title>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 20px;
+        }
+        .container {
+            display: block;
+            gap: 20px;
+        }
+        .column {
+            flex: 1;
+            width: 100%;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            margin: 10px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout:fixed ;
+            word-wrap:break-word
+        }
+        th,td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            background: #f5f5f5;
+        }
+        .key {
+            width: 10%;
+        }
+        .translation {
+            width: 50%;
+        }
+        .translationText{
+            font-size: 20px;
+            width: 100%;
+        }
+        .noTranslation{
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="column">
+            <h3>模板文件</h3>
+            <input type="file" id="templateFile" accept=".xaml">
+
+            <h3>待翻译文件</h3>
+            <input type="file" id="translationFile" accept=".xaml" disabled>
+
+            <h3>导出</h3>
+            <button id="exportBtn" disabled>导出 XAML</button>
+        </div>
+        <br>
+        <div class="column">
+            <div id="editor" style="display: none;">
+                <div id="translationTable"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let baseStrings = new Map();
+        let translationStrings = new Map();
+
+        // 解析XAML文件
+        function parseXAML(file, callback) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(e.target.result, "text/xml");
+                const strings = xmlDoc.getElementsByTagName("system:String");
+
+                const result = new Map();
+                for (let str of strings) {
+                    const key = str.getAttribute("x:Key");
+                    const value = str.textContent;
+                    result.set(key, value);
+                }
+                callback(result);
+            };
+            reader.readAsText(file);
+        }
+
+        // 生成翻译表格
+        function generateTable() {
+            let html = `
+        <table>
+            <tr>
+                <th class="key">键名</th>
+                <th class="translation">原内容</th>
+                <th class="translation">翻译内容</th>
+            </tr>`;
+
+            for (let [key, value] of baseStrings) {
+                let inNoTrans = ""
+                if (!translationStrings.get(key) || translationStrings.get(key)=="") inNoTrans = "noTranslation"
+                html += `
+            <tr>
+                <td>${key}</td>
+                <td class="translationText ${inNoTrans}">${value}</td>
+                <td><input type="text" 
+                          class="translationText"
+                          data-key="${key}"
+                          value="${translationStrings.get(key) || ''}"
+                          style="width:100% size:30px"></td>
+            </tr>`;
+            }
+
+            html += "</table>";
+            document.getElementById("translationTable").innerHTML = html;
+            document.getElementById("editor").style.display = 'block';
+        }
+
+        // 文件上传处理
+        document.getElementById("templateFile").addEventListener('change', function (e) {
+            parseXAML(e.target.files[0], (result) => {
+                baseStrings = result;
+                document.getElementById("translationFile").disabled = false;
+            });
+        });
+
+        document.getElementById("translationFile").addEventListener('change', function (e) {
+            parseXAML(e.target.files[0], (result) => {
+                translationStrings = result;
+                generateTable();
+                document.getElementById("exportBtn").disabled = false;
+            });
+        });
+
+        // 导出XAML
+        document.getElementById("exportBtn").addEventListener('click', function () {
+            // 收集所有翻译内容
+            const inputs = document.querySelectorAll('input[data-key]');
+            const translations = new Map();
+            inputs.forEach(input => {
+                translations.set(input.dataset.key, input.value);
+            });
+
+            // 生成XAML内容
+            let xaml = `<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:system="clr-namespace:System;assembly=mscorlib">\n\n`;
+
+            for (let [key, value] of baseStrings) {
+                const translation = translations.get(key) || '';
+                xaml += `    <system:String x:Key="${key}">${translation}</system:String>\n`;
+            }
+
+            xaml += `</ResourceDictionary>`;
+
+            // 创建下载链接
+            const blob = new Blob([xaml], { type: 'application/xaml+xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Language.translated.xaml';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+    </script>
+</body>
+
+</html>
