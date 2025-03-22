@@ -2,6 +2,7 @@
   "name": "xaml-translator-editor",
   "version": "1.0.0",
   "main": "main.js",
+  "author": "CO",
   "scripts": {
     "start": "electron .",
     "pack:win": "electron-packager . --platform=win32 --arch=x64 --out=dist",
@@ -9,6 +10,6 @@
   },
   "devDependencies": {
     "electron": "^28.0.0",
-    "electron-packager": "^18.0.0"
+    "electron-packager": "^17.0.0"
   }
 }
