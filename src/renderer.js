@@ -120,16 +120,27 @@ function generateTable() {
         html += `
     <tr>
         <td>${key}</td>
-        <td class="translationText ${inNoTrans}">${value}</td>
+        <td class="translationText ${inNoTrans}" id="text-${key.replace(/\./g,"-")}">${value}</td>
         <td><input type="text" 
                   class="translationText"
                   data-key="${key}"
                   value="${translationStrings.get(key) || ''}"
-                  style="width:100% size:30px"></td>
+                  style="width:100% size:30px"
+                  keyName="${key.replace(/\./g,"-")}"
+                  onchange="inputChange(this)"></td>
     </tr>`;
     }
 
     html += "</table>";
     document.getElementById("translationTable").innerHTML = html;
     document.getElementById("editor").style.display = 'block';
+}
+
+function inputChange(obj){
+    console.log(obj.getAttribute('keyName'));
+    if(obj.value == ''){
+        document.getElementById(`text-${obj.getAttribute('keyName')}`).classList.add('noTranslation')
+    }else{
+        document.getElementById(`text-${obj.getAttribute('keyName')}`).classList.remove('noTranslation')
+    }
 }
