@@ -120,7 +120,7 @@ function generateTable() {
         html += `
     <tr>
         <td>${key}</td>
-        <td class="translationText ${inNoTrans}" id="text-${key.replace(/\./g,"-")}">${value}</td>
+        <td class="translationText originalText ${inNoTrans}" id="text-${key.replace(/\./g,"-")}">${value}</td>
         <td><input type="text" 
                   class="translationText"
                   data-key="${key}"
@@ -134,6 +134,8 @@ function generateTable() {
     html += "</table>";
     document.getElementById("translationTable").innerHTML = html;
     document.getElementById("editor").style.display = 'block';
+
+    countNoTranslations()
 }
 
 function inputChange(obj){
@@ -143,4 +145,14 @@ function inputChange(obj){
     }else{
         document.getElementById(`text-${obj.getAttribute('keyName')}`).classList.remove('noTranslation')
     }
+    countNoTranslations()
+}
+
+function countNoTranslations(){
+    let noNum = document.getElementsByClassName('noTranslation').length
+    let total = document.getElementsByClassName('originalText').length
+    console.log(document.getElementsByClassName('noTranslation').length);
+
+    document.getElementById('noTranslationNum').innerHTML = noNum
+    document.getElementById('totalNum').innerHTML = total
 }

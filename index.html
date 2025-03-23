@@ -67,14 +67,16 @@
         }
 
         .jumpToFirst {
-            background-color: #ddd;
+            background-color: #fff;
             position: fixed;
-            width: 50px;
-            height: 50px;
-            bottom: 0;
-            right: 0;
+            width: 70px;
+            height: 70px;
+            bottom: 3px;
+            right: 3px;
             cursor: pointer;
             text-align: center;
+            border-radius: 8px;
+            box-shadow: 0 0 10px black;
         }
         #dialog{
             background-color: white;
@@ -85,6 +87,9 @@
             border-radius: 8px;
             box-shadow: 0 0 10px green;
             display: none;
+        }
+        #noTranslationNum{
+            color: red;
         }
     </style>
     <script src="./src/renderer.js"></script>
@@ -139,6 +144,8 @@
         下一个
         <br>
         Ctrl+D
+        <br>
+        <a id="noTranslationNum"></a>/<a id="totalNum"></a>
     </div>
 
     <div id="dialog">
