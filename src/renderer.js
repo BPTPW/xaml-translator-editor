@@ -58,97 +58,94 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById("exportBtn").disabled = false
     })
 
-    window.electronAPI.onSaveFileClick(()=>{
+    window.electronAPI.onSaveFileClick(() => {
         document.getElementById('exportBtn').click()
     })
 
     // 导出按钮处理
     document.getElementById('exportBtn').addEventListener('click', async () => {
-        const inputs = document.querySelectorAll('input[data-key]')
-        const translations = new Map()
-        inputs.forEach(input => {
-            translations.set(input.dataset.key, input.value)
-        })
+    const inputs = document.querySelectorAll('input[data-key]')
+    const translations = new Map()
+    inputs.forEach(i => translations.set(i.dataset.key, i.value))
 
-        let xaml = `<ResourceDictionary
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:system="clr-namespace:System;assembly=mscorlib">\n\n`
+    let xaml = `<ResourceDictionary
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:system="clr-namespace:System;assembly=mscorlib">\n`
 
-        for (let [key, value] of baseStrings) {
-            const translation = translations.get(key) || ''
-            xaml += `    <system:String x:Key="${key}">${translation}</system:String>\n`
-        }
+    for (let [key, { rawXML }] of baseStrings) {
+        const tr = translations.get(key) || ''
+        // 只替换 >…</system:String> 之间的内容
+        const newXML = rawXML.replace(
+            />([\s\S]*?)<\/system:String>/,
+            `>${tr}</system:String>`
+        )
+        xaml += `  ${newXML}\n`
+    }
 
-        xaml += `</ResourceDictionary>`
-
-        const savedPath = await window.electronAPI.saveFile(xaml)
-        if (savedPath) {
-            showMessageDialog(`文件已保存至：${savedPath}`)
-        }
-    })
+    xaml += `</ResourceDictionary>`
+    const savedPath = await window.electronAPI.saveFile(xaml)
+    if (savedPath) showMessageDialog(`文件已保存至：${savedPath}`)
+  })
 })
 
 // 修改后的 XAML 解析函数
 function parseXAML(content) {
-    const parser = new DOMParser()
-    const xmlDoc = parser.parseFromString(content, "text/xml")
-    const strings = xmlDoc.getElementsByTagName("system:String")
-
+    const regex = /<system:String\b([\s\S]*?)>([\s\S]*?)<\/system:String>/g
     const result = new Map()
-    for (let str of strings) {
-        const key = str.getAttribute("x:Key")
-        const value = str.textContent
-        result.set(key, value)
+    let match
+    while (match = regex.exec(content)) {
+        const attrText = match[1]       // 包含所有属性，但不包含 xmlns:*（因为在 root 定义）
+        const inner = match[2]        // 原始文本内容，保留所有实体如 &#x000A;
+        const keyMatch = /x:Key="([^"]+)"/.exec(attrText)
+        if (!keyMatch) continue
+        const key = keyMatch[1]
+        // rawXML 保留原始开/结束标签和 inner
+        const rawXML = `<system:String${attrText}>${inner}</system:String>`
+        result.set(key, { inner, rawXML })
     }
     return result
 }
 
+
 // 生成翻译表格
 function generateTable() {
     let html = `
-<table>
-    <tr>
-        <th class="key">键名</th>
-        <th class="translation">原内容</th>
-        <th class="translation">翻译内容</th>
-    </tr>`;
-
-    for (let [key, value] of baseStrings) {
-        let inNoTrans = ""
-        if (!translationStrings.get(key) || translationStrings.get(key) == "") inNoTrans = "noTranslation"
+        <table>
+        <tr><th>键名</th><th>原内容</th><th>翻译内容</th></tr>`
+    for (let [key, { inner }] of baseStrings) {
+        const hasTrans = translationStrings.get(key).inner
+        const cls = (!hasTrans || hasTrans === '') ? 'noTranslation' : ''
+        if(inner.includes('&#x000A')) console.log(inner);
         html += `
-    <tr>
-        <td>${key}</td>
-        <td class="translationText originalText ${inNoTrans}" id="text-${key.replace(/\./g,"-")}">${value}</td>
-        <td><input type="text" 
-                  class="translationText"
-                  data-key="${key}"
-                  value="${translationStrings.get(key) || ''}"
-                  style="width:100% size:30px"
-                  keyName="${key.replace(/\./g,"-")}"
-                  onchange="inputChange(this)"></td>
-    </tr>`;
+            <tr>
+                <td>${key}</td>
+                <td class="translationText originalText ${cls}" id="text-${key.replace(/\./g, '-')}">${inner.replace('&','&amp;')}</td>
+                <td>
+                    <input class="translationText" type="text" data-key="${key}"
+                            value="${hasTrans || ''}"
+                            style="width:100%"
+                            onchange="inputChange(this)">
+                </td>
+            </tr>`
     }
-
-    html += "</table>";
-    document.getElementById("translationTable").innerHTML = html;
-    document.getElementById("editor").style.display = 'block';
-
+    html += `</table>`
+    document.getElementById("translationTable").innerHTML = html
+    document.getElementById("editor").style.display = 'block'
     countNoTranslations()
 }
 
-function inputChange(obj){
+function inputChange(obj) {
     console.log(obj.getAttribute('keyName'));
-    if(obj.value == ''){
+    if (obj.value == '') {
         document.getElementById(`text-${obj.getAttribute('keyName')}`).classList.add('noTranslation')
-    }else{
+    } else {
         document.getElementById(`text-${obj.getAttribute('keyName')}`).classList.remove('noTranslation')
     }
     countNoTranslations()
 }
 
-function countNoTranslations(){
+function countNoTranslations() {
     let noNum = document.getElementsByClassName('noTranslation').length
     let total = document.getElementsByClassName('originalText').length
     console.log(document.getElementsByClassName('noTranslation').length);
