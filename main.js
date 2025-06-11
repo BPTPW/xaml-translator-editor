@@ -14,7 +14,7 @@ function createWindow() {
         }
     })
 
-    mainWindow.webContents.openDevTools()
+    //mainWindow.webContents.openDevTools()
     //require(path.join(__dirname, './menu.js'))
     mainWindow.loadFile('index.html')
     mainWindow.setMenu(null)
