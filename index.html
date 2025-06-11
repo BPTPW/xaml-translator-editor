@@ -92,7 +92,9 @@
             color: red;
         }
     </style>
+    <link rel="stylesheet" href="./src/zui/zui.css">
     <script src="./src/renderer.js"></script>
+    <script src="./src/zui/zui.js"></script>
     <script>
         function jumpToFirst() {
             const firstTarget = document.querySelector('.noTranslation');
@@ -101,11 +103,12 @@
             }
         }
         function showMessageDialog(message){
-            document.getElementById('dialog-message').innerHTML = message
-            document.getElementById('dialog').style.display = 'block'
-            setTimeout(()=>{
-                document.getElementById('dialog').style.display = 'none'
-            },3000)
+            console.log(message);
+            zui.Messager.show({
+                message: 'asdsdsd',
+                type: 'success-pale circle',
+                time: 0
+            })
         }
         document.addEventListener('keydown', (event) => {
             if (event.key === 'd' && event.ctrlKey) {
