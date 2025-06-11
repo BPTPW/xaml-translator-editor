@@ -112,7 +112,7 @@ function parseXAML(content) {
 function generateTable() {
     let html = `
         <table>
-        <tr><th>键名</th><th>原内容</th><th>翻译内容</th></tr>`
+        <tr><th class="key">键名</th><th class="translation">原内容</th><th class="translation">翻译内容</th></tr>`
     for (let [key, { inner }] of baseStrings) {
         const hasTrans = translationStrings.get(key).inner
         const cls = (!hasTrans || hasTrans === '') ? 'noTranslation' : ''
