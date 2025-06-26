@@ -28,8 +28,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById("exportBtn").disabled = false
             document.querySelector('#translationFile').dataset.path = config.lastTranslation
             document.getElementById('translationPath').textContent = `已加载: ${config.lastTranslation}`
-        } catch {
+        } catch(e) {
             console.log('上次的翻译文件已不存在')
+            console.log(e);
         }
     }
 
@@ -114,7 +115,10 @@ function generateTable() {
         <table>
         <tr><th class="key">键名</th><th class="translation">原内容</th><th class="translation">翻译内容</th></tr>`
     for (let [key, { inner }] of baseStrings) {
-        const hasTrans = translationStrings.get(key).inner
+        let hasTrans = ''
+        if(translationStrings.get(key)){
+            hasTrans = translationStrings.get(key).inner
+        }
         const cls = (!hasTrans || hasTrans === '') ? 'noTranslation' : ''
         if(inner.includes('&#x000A')) console.log(inner);
         html += `
