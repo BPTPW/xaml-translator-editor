@@ -129,6 +129,7 @@ function generateTable() {
                     <input class="translationText" type="text" data-key="${key}"
                             value="${hasTrans || ''}"
                             style="width:100%"
+                            keyName="${key.replace(/\./g, '-')}"
                             onchange="inputChange(this)">
                 </td>
             </tr>`
