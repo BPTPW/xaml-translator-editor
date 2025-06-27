@@ -53,16 +53,17 @@ jobs:
         run: |
           $prev = "${{ steps.prev_tag.outputs.prev_tag }}"
           $repo = "${{ github.repository }}"
-          git log $prev..HEAD --pretty=format:"* %s ([\`%h\`](https://github.com/$repo/commit/%H)) (%an)" > changelog.txt
+          $range1 = "$prev..HEAD"
+          $raneg2 = "--pretty=format:`"* %s ([\`%h\`](https://github.com/$repo/commit/%H)) (%an)`""
+          git log $range1 $raneg2 > changelog.txt
 
       - name: Run build
         run: npm run dist
 
-      - name: Debug prev_tag
-        run: echo "Previous tag: ${{ steps.prev_tag.outputs.prev_tag }}"
-        
       - name: Show generated changelog
-        run: cat changelog.txt
+        run: |
+          Get-Content changelog.txt
+        shell: pwsh
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
