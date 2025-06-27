@@ -46,11 +46,11 @@ jobs:
           echo "prev_tag=$prevTag" >> $env:GITHUB_OUTPUT
 
       - name: Generate full changelog since last tag
-          id: changelog
-          run: |
-            $prev = "${{ steps.prev_tag.outputs.prev_tag }}"
-            $repo = "${{ github.repository }}"
-            git log $prev..HEAD --pretty=format:"* %s ([\`%h\`](https://github.com/$repo/commit/%H)) (%an)" > changelog.txt
+        id: changelog
+        run: |
+          $prev = "${{ steps.prev_tag.outputs.prev_tag }}"
+          $repo = "${{ github.repository }}"
+          git log $prev..HEAD --pretty=format:"* %s ([\`%h\`](https://github.com/$repo/commit/%H)) (%an)" > changelog.txt
 
       - name: Run build
         run: npm run dist
