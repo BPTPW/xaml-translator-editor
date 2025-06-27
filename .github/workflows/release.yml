@@ -1,0 +1,76 @@
+name: Build and Release with Full Changelog
+
+on:
+  push:
+    branches:
+      - main  # 或你使用的主分支
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 关键！保留完整 git 历史以生成 changelog
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Get current version
+        id: get_version
+        run: |
+          $version = (Get-Content package.json | Out-String | ConvertFrom-Json).version
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Check if tag exists
+        id: check_tag
+        run: |
+          $tag = "v${{ steps.get_version.outputs.version }}"
+          echo "tag=$tag" >> $env:GITHUB_OUTPUT
+          if (git rev-parse $tag 2> $null) {
+            echo "Tag $tag already exists, skipping release."
+            exit 0
+          }
+
+      - name: Get previous tag
+        id: prev_tag
+        run: |
+          $prevTag = git describe --tags --abbrev=0
+          echo "prev_tag=$prevTag" >> $env:GITHUB_OUTPUT
+
+      - name: Generate full changelog since last tag
+          id: changelog
+          run: |
+            $prev = "${{ steps.prev_tag.outputs.prev_tag }}"
+            $repo = "${{ github.repository }}"
+            git log $prev..HEAD --pretty=format:"* %s ([\`%h\`](https://github.com/$repo/commit/%H)) (%an)" > changelog.txt
+
+      - name: Run build
+        run: npm run dist
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.check_tag.outputs.tag }}
+          name: Release ${{ steps.get_version.outputs.version }}
+          body_path: changelog.txt
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts (.exe)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.check_tag.outputs.tag }}
+          files: |
+            dist/*.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
