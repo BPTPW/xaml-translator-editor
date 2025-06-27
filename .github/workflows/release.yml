@@ -58,6 +58,9 @@ jobs:
       - name: Run build
         run: npm run dist
 
+      - name: Show generated changelog
+        run: cat changelog.txt
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -68,6 +71,5 @@ jobs:
           prerelease: false
           files: |
             dist/*.exe
-            changelog.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
