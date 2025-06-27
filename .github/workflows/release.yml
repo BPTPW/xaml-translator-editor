@@ -58,6 +58,9 @@ jobs:
       - name: Run build
         run: npm run dist
 
+      - name: Debug prev_tag
+        run: echo "Previous tag: ${{ steps.prev_tag.outputs.prev_tag }}"
+        
       - name: Show generated changelog
         run: cat changelog.txt
 
