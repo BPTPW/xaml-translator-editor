@@ -54,7 +54,7 @@ jobs:
           $prev = "${{ steps.prev_tag.outputs.prev_tag }}"
           $repo = "${{ github.repository }}"
           $range1 = "$prev..HEAD"
-          $raneg2 = "--pretty=format:`"* %s ([\`%h\`](https://github.com/$repo/commit/%H)) (%an)`""
+          $raneg2 = "--pretty=format:* %s ([\`%h\`](https://github.com/$repo/commit/%H)) (%an)"
           git log $range1 $raneg2 > changelog.txt
 
       - name: Run build
