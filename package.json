@@ -41,6 +41,7 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "XAML 翻译编辑器"
-    }
+    },
+    "publish": "never"
   }
 }
