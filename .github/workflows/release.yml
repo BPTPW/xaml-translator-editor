@@ -68,5 +68,6 @@ jobs:
           prerelease: false
           files: |
             dist/*.exe
+            changelog.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
