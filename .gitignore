@@ -2,3 +2,5 @@
 /dist
 config*.json
 /src/zui/*
+.DS_store
+.gitignore

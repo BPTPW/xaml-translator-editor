@@ -1,10 +1,10 @@
 {
   "name": "xaml-translator-editor",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "main": "main.js",
   "author": "CO",
   "scripts": {
-    "start": "chcp 65001 && electron .",
+    "start": "electron .",
     "pack": "electron-builder --dir",
     "dist": "electron-builder"
   },

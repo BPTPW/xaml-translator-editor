@@ -124,7 +124,10 @@ function generateTable() {
         html += `
             <tr>
                 <td>${key}</td>
-                <td class="translationText originalText ${cls}" id="text-${key.replace(/\./g, '-')}">${inner.replace('&','&amp;')}</td>
+                <td class="translationText originalText ${cls}" id="text-${key.replace(/\./g, '-')}">
+                    <span>${inner.replace('&','&amp;')}</span>
+                    <button class="copyBtn" onclick="copyToClipboard('${key.replace(/\./g, '-')}')" title="复制文本">📋</button>
+                </td>
                 <td>
                     <input class="translationText" type="text" data-key="${key}"
                             value="${hasTrans || ''}"
@@ -157,4 +160,20 @@ function countNoTranslations() {
 
     document.getElementById('noTranslationNum').innerHTML = noNum
     document.getElementById('totalNum').innerHTML = total
+}
+
+function copyToClipboard(keyName) {
+    const textElement = document.getElementById(`text-${keyName}`)
+    const text = textElement.querySelector('span').textContent
+    navigator.clipboard.writeText(text).then(() => {
+        // 临时显示反馈
+        const btn = event.target
+        const originalText = btn.textContent
+        btn.textContent = '✓'
+        setTimeout(() => {
+            btn.textContent = originalText
+        }, 1500)
+    }).catch(err => {
+        console.error('复制失败:', err)
+    })
 }
