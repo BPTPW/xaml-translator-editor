@@ -2,78 +2,112 @@ name: Build and Release with Full Changelog
 
 on:
   push:
-    branches:
-      - main  # 或你使用的主分支
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '手动输入版本号 (例如: v1.0.0)'
+        required: true
+        default: 'v1.0.0'
 
 permissions:
   contents: write
 
 jobs:
   build:
-    runs-on: windows-latest
+    name: Build for ${{ matrix.os }}
+    strategy:
+      matrix:
+        # 定义三个平台的运行环境
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        include:
+          - os: windows-latest
+            suffix: exe
+          - os: macos-latest
+            suffix: dmg
+          - os: ubuntu-latest
+            suffix: AppImage
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # 关键！保留完整 git 历史以生成 changelog
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm install
 
-      - name: Get current version
-        id: get_version
+      - name: Set Version and Tag
+        id: vars
+        shell: bash
         run: |
-          $version = (Get-Content package.json | Out-String | ConvertFrom-Json).version
-          echo "version=$version" >> $env:GITHUB_OUTPUT
-
-      - name: Check if tag exists
-        id: check_tag
-        run: |
-          $tag = "v${{ steps.get_version.outputs.version }}"
-          echo "tag=$tag" >> $env:GITHUB_OUTPUT
-          if (git rev-parse $tag 2> $null) {
-            echo "Tag $tag already exists, skipping release."
-            exit 0
-          }
+          # 判断是手动触发还是推送标签触发
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            TAG_NAME="${{ github.event.inputs.tag }}"
+          else
+            TAG_NAME="${{ github.ref_name }}"
+          fi
+          
+          VERSION=${TAG_NAME#v}
+          echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Triggered Tag: $TAG_NAME"
 
       - name: Get previous tag
         id: prev_tag
+        shell: bash
         run: |
-          $prevTag = git describe --tags --abbrev=0
-          echo "prev_tag=$prevTag" >> $env:GITHUB_OUTPUT
+          # 获取上一个标签，如果没有则取首个 commit
+          PREV_TAG=$(git tag --sort=-v:refname | sed -n '2p')
+          if [ -z "$PREV_TAG" ]; then
+            PREV_TAG=$(git rev-list --max-parents=0 HEAD)
+          fi
+          echo "prev_tag=$PREV_TAG" >> $GITHUB_OUTPUT
 
-      - name: Generate full changelog since last tag
+      - name: Generate changelog
         id: changelog
+        shell: bash
         run: |
-          $prev = "${{ steps.prev_tag.outputs.prev_tag }}"
-          $repo = "${{ github.repository }}"
-          $range1 = "$prev..HEAD"
-          $raneg2 = "--pretty=format:* %s (%an) [%h](https://github.com/$repo/commit/%H)"
-          git log $range1 $raneg2 > changelog.txt
+          PREV="${{ steps.prev_tag.outputs.prev_tag }}"
+          REPO="${{ github.repository }}"
+          # 生成日志到文件
+          git log "$PREV..HEAD" --pretty=format:"* %s (%an) [%h](https://github.com/$REPO/commit/%H)" > changelog.txt
 
       - name: Run build
         run: npm run dist
 
-      - name: Show generated changelog
+      - name: Rename artifacts
+        shell: bash
         run: |
-          Get-Content changelog.txt
-        shell: pwsh
+          TAG="${{ steps.vars.outputs.tag }}"
+          # 创建存放重命名后文件的目录
+          mkdir -p final_artifacts
+          
+          if [ "${{ matrix.os }}" == "windows-latest" ]; then
+            mv dist/*.exe "final_artifacts/xaml-translator-editor-$TAG.exe"
+          elif [ "${{ matrix.os }}" == "macos-latest" ]; then
+            mv dist/*.dmg "final_artifacts/xaml-translator-editor-$TAG.dmg" || mv dist/*.pkg "final_artifacts/xaml-translator-editor-$TAG.pkg"
+          elif [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            mv dist/*.AppImage "final_artifacts/xaml-translator-editor-$TAG.AppImage" || mv dist/*.deb "final_artifacts/xaml-translator-editor-$TAG.deb"
+          fi
 
-      - name: Create GitHub Release
+      - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.check_tag.outputs.tag }}
-          name: ${{ steps.get_version.outputs.version }}
+          tag_name: ${{ steps.vars.outputs.tag }}
+          name: ${{ steps.vars.outputs.version }}
           body_path: changelog.txt
           draft: false
           prerelease: false
-          files: |
-            dist/*.exe
+          # 自动匹配并上传重命名后的文件
+          files: final_artifacts/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
